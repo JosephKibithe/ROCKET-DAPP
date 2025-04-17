@@ -1,0 +1,32 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+ # Cursor Project Rules for ROCKET – Web3 Prediction Market
+
+## General Rules
+- Do not modify the tech stack specified in `tech_stack_document.mdc`.
+- Follow the folder structure defined in `backend_structure.mdc`.
+- Use Tailwind CSS and ShadCN as per `frontend_guidelines.mdc`.
+- Do not add features outside the scope defined in `project_requirements_document.mdc`.
+
+## Code Execution
+- Execute each step in `implementation_plan_document.mdc` sequentially.
+- If an error occurs, log the error and stop execution, providing a detailed error message.
+- Do not assume missing information; if a step is unclear, prompt for clarification.
+
+## Security Rules
+- Validate wallet signatures before any Web3 action.
+- Sanitize user inputs for bet details (e.g., question, outcomes).
+- Ensure Supabase RLS is enforced for all database operations.
+
+## Performance Rules
+- Use TanStack Virtual for the bet feed to handle large datasets.
+- Optimize Next.js images with quality 50 and preload fonts.
+- Minimize gas costs for smart contract deployment (e.g., batch transactions).
+
+## Documentation Integration
+- Refer to `app_flow_document.mdc` for user journey and edge cases.
+- Use `frontend_guidelines.mdc` for component structure and styling.
+- Use `backend_structure.mdc` for API and contract implementation.

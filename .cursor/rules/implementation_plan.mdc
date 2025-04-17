@@ -1,0 +1,64 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+ # Implementation Plan for ROCKET – Web3 Prediction Market
+
+## Phase 1: Project Setup (Steps 1-10)
+1. Initialize a new Git repository for the project.
+2. Create a project directory: `rocket-web3/`.
+3. Set up a Next.js 14 project (`npx create-next-app@latest rocket-web3 --ts`).
+4. Install dependencies: `yarn add zustand tailwindcss@3.3 shadcn-ui framer-motion viem wagmi @supabase/supabase-js react-query tanstack-virtual next/font`.
+5. Configure Tailwind CSS (`npx tailwindcss init -p` and update `tailwind.config.js`).
+6. Set up ShadCN components (`npx shadcn-ui@latest init`).
+7. Install Hardhat for smart contract development (`npm install --save-dev hardhat`).
+8. Configure environment variables (`cp .env.example .env.local` with Supabase and WalletConnect keys).
+9. Initialize Supabase project and create `bets` table with RLS.
+10. Set up IPFS client for asset hosting (e.g., `npm install ipfs-http-client`).
+
+## Phase 2: Backend and Contract Development (Steps 11-25)
+11. Create `lib/supabase.js` with Supabase client configuration.
+12. Create `lib/wagmi.js` with `wagmi` and `viem` configuration.
+13. Write `contracts/PredictionMarket.sol` with bet creation and resolution logic.
+14. Configure `hardhat.config.js` for Ethereum and PulseChain networks.
+15. Test smart contract locally with Hardhat (`npx hardhat test`).
+16. Implement contract deployment function in `lib/wagmi.js` using Ethers.js.
+17. Set up Supabase Realtime subscription for `bets` table in `lib/supabase.js`.
+18. Create `app/api/bet/route.js` for bet metadata storage.
+19. Implement RLS policies on Supabase `bets` table.
+20. Add error handling for Supabase and contract interactions.
+21. Test Realtime updates with a sample bet creation.
+22. Optimize gas usage for contract deployment (e.g., adjust constructor args).
+23. Integrate IPFS upload function for meme storage.
+24. Test IPFS upload with a sample image.
+25. Log contract events to Supabase for tracking.
+
+## Phase 3: Frontend Development (Steps 26-40)
+26. Create `app/(public)/page.jsx` with a static landing page.
+27. Create `app/browse/page.jsx` with SSR for the main feed.
+28. Create `app/bet/[id]/page.jsx` with ISR for bet details.
+29. Create `app/dashboard/page.jsx` as a client-side component.
+30. Build `CategoriesPanel.jsx` with collapsible filters.
+31. Build `LiveBetFeed.jsx` with TanStack Virtual for performance.
+32. Build `WalletPanel.jsx` with tab system for dashboard.
+33. Create `BetCreationModal.jsx` with a 4-step wizard.
+34. Create `MemeEngine.jsx` with template selection and IPFS upload.
+35. Set up Zustand store in `lib/store.js` for global state.
+36. Integrate `wagmi` hooks in `WalletPanel.jsx` for wallet connection.
+37. Fetch live bets from Supabase in `LiveBetFeed.jsx`.
+38. Implement bet creation flow with contract deployment.
+39. Add Framer Motion animations to Bet Cards (3D tilt on hover).
+40. Optimize images with Next.js `<Image>` (quality 50).
+
+## Phase 4: Testing and Deployment (Steps 41-50)
+41. Test wallet connection with MetaMask, WalletConnect, and Coinbase Wallet.
+42. Test bet creation flow with gas estimation and contract deployment.
+43. Test Supabase Realtime updates on the live feed.
+44. Test mobile responsiveness (collapsible columns, full-screen modal).
+45. Fix UI bugs (e.g., alignment, overflow on mobile).
+46. Deploy the Next.js app to Vercel.
+47. Configure Vercel environment variables (Supabase, WalletConnect).
+48. Enable "Optimize for React" flag on Vercel.
+49. Test the deployed app end-to-end (browse to meme share).
+50. Document known issues and deployment steps in `README.md`.

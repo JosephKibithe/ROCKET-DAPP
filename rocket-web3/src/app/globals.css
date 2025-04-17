@@ -1,0 +1,16 @@
+/* Extremely minimal styles - no Tailwind directives */
+
+:root {
+  --color-primary: #ff2d75;
+  --color-secondary: #00e0c7;
+  --color-dark: #1a0933;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: sans-serif;
+  background: linear-gradient(to bottom right, var(--color-dark), #000);
+  color: white;
+  min-height: 100vh;
+}

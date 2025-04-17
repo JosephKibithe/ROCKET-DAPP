@@ -1,0 +1,33 @@
+ # Project Requirements Document (PRD) for TaskMaster SaaS
+
+## Project Overview
+- **Project Name**: TaskMaster SaaS
+- **Objective**: Build a SaaS application for task management, allowing users to create, edit, and track tasks in a minimalist dashboard.
+- **Target Audience**: Individuals and small teams needing a simple task management tool.
+- **Version**: v1.0
+
+## Key Features for v1
+- **User Authentication**:
+  - Login and signup with email and password.
+  - Secure session management.
+- **Task Management**:
+  - Create, edit, and delete tasks.
+  - Each task has a title, description, due date, and status (e.g., "To Do," "In Progress," "Done").
+- **Dashboard**:
+  - Display all tasks in a list view.
+  - Filter tasks by status.
+  - Sidebar navigation for accessing dashboard and user settings.
+
+## Out-of-Scope for v1
+- Collaborative task features (e.g., sharing tasks with other users).
+- Advanced analytics or reporting.
+- Mobile app support (focus on web app only).
+
+## Success Criteria
+- Users can sign up, log in, and manage tasks within 5 minutes of accessing the app.
+- The app supports up to 1,000 concurrent users without performance degradation.
+- Task data persists reliably in the database.
+
+## Constraints
+- Must be deployable on a cloud platform like Vercel or Render.
+- Should adhere to OWASP security best practices for user authentication.

@@ -1,0 +1,37 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+ # App Flow Document for ROCKET – Web3 Prediction Market
+
+## User Journey
+
+### Anonymous User
+1. **Landing on /browse**:
+   - Lands on `/browse` with no redirect, viewing a read-only live bet feed.
+2. **Initiating Prediction**:
+   - Clicks "Predict" on a bet → Auth modal appears with options (Wallet Connect, Google OAuth, Email/Password, Anonymous).
+3. **Authentication**:
+   - Chooses an auth method → Returns to the original bet with full access.
+
+### Authenticated User
+1. **Wallet Connection**:
+   - Connects wallet via the floating header button (MetaMask, WalletConnect, Coinbase Wallet).
+2. **Bet Creation**:
+   - Opens the 4-step wizard modal → Fills details → Pays gas fee → Smart contract deploys.
+3. **Sharing**:
+   - Bet link is auto-copied for sharing.
+4. **Post-Resolution Actions**:
+   - Returns to check resolution, claim rewards, or generate/share a meme via the Wallet Dashboard.
+
+## Flow Diagram (Conceptual)
+- `/browse` → [Anonymous] → Click "Predict" → Auth Modal → [Success] → `/browse` (Authenticated)
+- Authenticated → Connect Wallet → Bet Creation Modal → [Gas Paid] → Contract Deployed → Wallet Dashboard
+- Wallet Dashboard → [Resolution] → Meme Engine → Share/Download
+
+## Edge Cases
+- If wallet connection fails, display an error message with a retry option.
+- If gas fees exceed user balance, prompt to adjust stake or cancel.
+- If Supabase Realtime disconnects, show a fallback static feed with a reconnect prompt.
+- If IPFS upload fails, allow manual download of the meme instead.

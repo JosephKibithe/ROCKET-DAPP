@@ -1,0 +1,43 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+ # Tech Stack Document for ROCKET – Web3 Prediction Market
+
+## Frontend
+- **Framework**: Next.js 14 (App Router)
+- **Library**: React 18 with Server Components for static elements
+- **State Management**: Zustand for client-side global state
+
+## UI Layer
+- **Styling**: Tailwind CSS v3.3 (JIT compiler)
+- **Components**: ShadCN for accessible, unstyled components
+- **Animations**: Framer Motion
+
+## Backend Services
+- **Platform**: Supabase
+  - **Database**: PostgreSQL (user profiles, bet metadata)
+  - **Realtime**: Subscriptions for live bet updates
+  - **Storage**: For meme images
+
+## Smart Contracts
+- **Language**: Solidity (Ethereum/PulseChain)
+- **Development Tool**: Hardhat
+
+## Deployment
+- **Platform**: Vercel (optimized for Next.js)
+- **Asset Hosting**: IPFS for decentralized storage
+
+## Additional Tools
+- **Wallet Interaction**: `viem` + `wagmi`
+- **Data Fetching**: `@supabase/supabase-js`, `react-query`
+- **Virtualization**: TanStack Virtual for bet feed
+- **Fonts**: `next/font` with preload
+- **Version Control**: Git (GitHub)
+- **Environment Variables**: dotenv for local development
+
+## Constraints
+- All dependencies must be compatible with Node.js 18+.
+- Use Next.js optimizations (e.g., `<Image>` with quality 50) for performance.
+- Ensure smart contract compatibility with Ethereum and PulseChain networks.

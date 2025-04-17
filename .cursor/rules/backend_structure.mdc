@@ -1,0 +1,46 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+ # Backend Structure for ROCKET – Web3 Prediction Market
+
+## Folder Structure
+- `app/`
+  - `/(public)/`: Landing page logic.
+  - `/browse/`: Main feed logic (SSR).
+  - `/bet/[id]/`: Bet detail logic (ISR).
+  - `/dashboard/`: Client-side dashboard logic.
+- `lib/`
+  - `supabase.js`: Supabase client configuration.
+  - `wagmi.js`: Wallet and contract configuration.
+- `contracts/`
+  - `PredictionMarket.sol`: Solidity smart contract.
+  - `hardhat.config.js`: Hardhat configuration.
+
+## Database Schema (Supabase)
+- **bets**:
+  - `id`: UUID (PRIMARY KEY)
+  - `question`: TEXT
+  - `creator_id`: UUID (REFERENCES auth.users)
+  - `contract_address`: TEXT
+  - `resolution_time`: TIMESTAMPTZ
+  - WITH (autovacuum_enabled=true)
+
+## API Endpoints
+- **Supabase Realtime**:
+  - Subscribe to `bets` table for live updates.
+- **Smart Contract Interaction**:
+  - `deployContract`: Deploys `PredictionMarket.sol` with Ethers.js.
+  - `getBetStatus`: Queries contract state via `viem`.
+  - `claimRewards`: Executes reward claim transaction.
+
+## Security
+- Use Row Level Security (RLS) on Supabase `bets` table.
+- Validate wallet signatures with `wagmi` before contract deployment.
+- Store sensitive data (e.g., Supabase keys) in environment variables.
+
+## Error Handling
+- Return standardized JSON error responses:
+  - `{ "error": "Message", "status": 400 }`
+- Log errors to Supabase logs or a file for debugging.

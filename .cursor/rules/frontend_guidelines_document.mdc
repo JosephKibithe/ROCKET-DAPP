@@ -1,0 +1,45 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+ # Frontend Guidelines for ROCKET – Web3 Prediction Market
+
+## UI Design Principles
+- **Visual Language**:
+  - Color Palette: Primary (#FF2D75 electric pink), Secondary (#00E0C7 teal), Dark (#1A0933 deep purple).
+  - Typography: Headings ("Comic Neue" from Google Fonts), Body ("Inter" with system stack fallback).
+- **Responsive Design**:
+  - Mobile-first with collapsible columns (swipe gestures on mobile).
+  - Bet creation as full-screen modal on mobile.
+  - Floating action button for wallet on mobile.
+
+## Component Structure
+- **Root Component**: `app/layout.jsx`
+  - Handles global layout and authentication state.
+- **Pages**:
+  - `/(public)/page.jsx`: Landing page (static).
+  - `/browse/page.jsx`: Main feed (Server-Side Rendered).
+  - `/bet/[id]/page.jsx`: Bet detail (Incremental Static Regeneration).
+  - `/dashboard/page.jsx`: Client-side dashboard.
+- **Components**:
+  - `CategoriesPanel.jsx`: Left column with filters (collapsible).
+  - `LiveBetFeed.jsx`: Center column with virtualized list.
+  - `WalletPanel.jsx`: Right column with tab system.
+  - `BetCreationModal.jsx`: 4-step wizard modal.
+  - `MemeEngine.jsx`: Post-resolution meme generator.
+
+## Styling Rules
+- Use Tailwind CSS with JIT compiler for all styling.
+- Apply gradient borders (pink→purple) to Bet Cards with Framer Motion 3D tilt on hover.
+- Buttons: Primary (pink with purple shadow), Secondary (teal outline), all with 8px border radius.
+- Ensure WCAG 2.1 AA contrast ratios (e.g., dark text on light background).
+
+## State Management
+- Use Zustand for global state (e.g., wallet connection status, active bet data).
+- Use local component state (via `useState`) for transient UI state (e.g., modal open/close).
+
+## API Integration
+- Fetch live bets from Supabase Realtime subscriptions.
+- Use `wagmi` hooks for wallet interactions (e.g., `useAccount`, `useContractWrite`).
+- Handle loading and error states with UI feedback (e.g., spinners, error toasts).
