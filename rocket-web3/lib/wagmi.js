@@ -1,36 +1,18 @@
 import { createConfig, http } from "wagmi";
-import { mainnet, sepolia, pulsechain } from "wagmi/chains";
-import { metaMask, walletConnect, coinbaseWallet } from "wagmi/connectors";
-
-// PulseChain network configuration (placeholder values)
-// Update these values to the correct ones for PulseChain
-// Not enabling pulsechain until we have the correct RPC URL
-// For development, we'll use sepolia as the default chain
-
-// Get WalletConnect project ID from environment variables
-const walletConnectProjectId =
-  process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || "";
+import { mainnet, sepolia } from "wagmi/chains";
+import { injected } from "wagmi/connectors";
 
 // Configure supported chains
-const chains = [sepolia, mainnet];
+export const chains = [sepolia, mainnet];
 
 // Create wagmi config
-export const wagmiConfig = createConfig({
+export const config = createConfig({
   chains,
+  connectors: [injected()],
   transports: {
     [sepolia.id]: http(),
     [mainnet.id]: http(),
   },
-  connectors: [
-    metaMask(),
-    walletConnect({
-      projectId: walletConnectProjectId,
-      showQrModal: true,
-    }),
-    coinbaseWallet({
-      appName: "ROCKET Prediction Market",
-    }),
-  ],
 });
 
 // Get contract address from environment variables
@@ -56,9 +38,4 @@ export function formatAmount(amount, decimals = 18) {
 }
 
 // Export the configuration
-export default {
-  wagmiConfig,
-  chains,
-  contractAddress,
-  formatAmount,
-};
+export default config;

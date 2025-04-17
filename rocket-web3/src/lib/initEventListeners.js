@@ -1,76 +1,53 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useProvider } from "wagmi";
+import { useAccount, usePublicClient } from "wagmi";
 import { setupEventListeners } from "../../lib/contract";
 import { contractAddress } from "../../lib/wagmi";
 
-/**
- * Component to initialize contract event listeners
- * @returns {React.ReactElement} - Empty component for setup
- */
 export function InitEventListeners() {
-  const provider = useProvider();
+  const { isConnected } = useAccount();
+  const publicClient = usePublicClient();
   const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
-    // Only set up listeners if we have a provider and contract address
-    if (!provider || !contractAddress) {
-      console.warn(
-        "Provider or contract address not available, skipping event listener setup"
-      );
-      return;
-    }
+    let isSubscribed = true;
 
-    if (initialized) {
-      return;
-    }
+    const initializeEventListeners = async () => {
+      if (!isConnected || !publicClient || !contractAddress) {
+        return;
+      }
 
-    console.log("Setting up contract event listeners...");
-    const { unsubscribe } = setupEventListeners(provider, contractAddress);
-    setInitialized(true);
+      if (initialized) {
+        return;
+      }
 
-    // Clean up listeners on unmount
-    return () => {
-      console.log("Cleaning up contract event listeners...");
-      unsubscribe();
+      try {
+        const { unsubscribe } = await setupEventListeners(
+          publicClient,
+          contractAddress
+        );
+        if (isSubscribed) {
+          setInitialized(true);
+          return unsubscribe;
+        } else {
+          unsubscribe?.();
+        }
+      } catch (error) {
+        console.warn("Failed to setup event listeners:", error);
+      }
     };
-  }, [provider, initialized]);
 
-  // This component doesn't render anything
+    initializeEventListeners().catch((error) => {
+      console.warn("Error in event listener initialization:", error);
+    });
+
+    return () => {
+      isSubscribed = false;
+    };
+  }, [publicClient, isConnected, initialized]);
+
   return null;
-}
-
-/**
- * Hook to initialize contract event listeners
- */
-export function useInitEventListeners() {
-  const provider = useProvider();
-  const [initialized, setInitialized] = useState(false);
-
-  useEffect(() => {
-    // Only set up listeners if we have a provider and contract address
-    if (!provider || !contractAddress) {
-      console.warn(
-        "Provider or contract address not available, skipping event listener setup"
-      );
-      return;
-    }
-
-    if (initialized) {
-      return;
-    }
-
-    console.log("Setting up contract event listeners...");
-    const { unsubscribe } = setupEventListeners(provider, contractAddress);
-    setInitialized(true);
-
-    // Clean up listeners on unmount
-    return () => {
-      console.log("Cleaning up contract event listeners...");
-      unsubscribe();
-    };
-  }, [provider, initialized]);
 }
 
 export default InitEventListeners;
