@@ -15,7 +15,7 @@ const walletConnectProjectId =
 const chains = [sepolia, mainnet];
 
 // Create wagmi config
-export const config = createConfig({
+export const wagmiConfig = createConfig({
   chains,
   transports: {
     [sepolia.id]: http(),
@@ -57,7 +57,7 @@ export function formatAmount(amount, decimals = 18) {
 
 // Export the configuration
 export default {
-  config,
+  wagmiConfig,
   chains,
   contractAddress,
   formatAmount,

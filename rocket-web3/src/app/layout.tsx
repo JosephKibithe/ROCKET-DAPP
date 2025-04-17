@@ -2,6 +2,15 @@ import type { Metadata } from "next";
 import { Inter, Comic_Neue } from "next/font/google";
 import "./globals.css";
 import "./tailwind.css";
+import Web3Provider from "../components/Web3Provider";
+import dynamic from "next/dynamic";
+
+// Dynamic import to avoid SSR issues with wagmi/web3 components
+const EventListenersComponent = dynamic(
+  () =>
+    import("../lib/initEventListeners").then((mod) => mod.InitEventListeners),
+  { ssr: false }
+);
 
 const inter = Inter({
   variable: "--font-inter",
@@ -29,7 +38,11 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${comicNeue.variable} antialiased bg-gradient-to-br from-dark to-black text-white`}
       >
-        {children}
+        <Web3Provider>
+          {/* Initialize contract event listeners */}
+          <EventListenersComponent />
+          {children}
+        </Web3Provider>
       </body>
     </html>
   );

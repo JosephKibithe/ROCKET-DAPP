@@ -1,5 +1,6 @@
 import { ethers } from "ethers";
 import { contractAddress } from "./wagmi";
+import { logContractEvent, syncPredictionToSupabase } from "./eventLogger";
 
 // Import ABI from artifacts (this will be generated after contract compilation)
 // For now, let's use a placeholder and we'll update it once we compile the contract
@@ -40,11 +41,17 @@ export async function deployPredictionMarket(signer) {
     // Wait for deployment to complete
     await contract.waitForDeployment();
 
+    const address = await contract.getAddress();
+
     // Log the contract address
-    console.log(
-      "PredictionMarket contract deployed to:",
-      await contract.getAddress()
-    );
+    console.log("PredictionMarket contract deployed to:", address);
+
+    // Log deployment event
+    await logContractEvent("ContractDeployed", {
+      contractAddress: address,
+      deployer: await signer.getAddress(),
+      timestamp: Math.floor(Date.now() / 1000),
+    });
 
     return contract;
   } catch (error) {
@@ -105,6 +112,33 @@ export async function createPrediction(
       )
       .map((log) => contract.interface.parseLog(log))[0];
 
+    if (event) {
+      const predictionId = event.args[0];
+      const creator = event.args[2];
+      const resTime = event.args[3];
+
+      // Log the event to Supabase
+      await logContractEvent("PredictionCreated", {
+        predictionId: predictionId.toString(),
+        question,
+        creator,
+        resolutionTime: resTime.toString(),
+        options,
+        transactionHash: receipt.hash,
+      });
+
+      // Sync prediction to Supabase
+      await syncPredictionToSupabase(predictionId.toString(), {
+        question,
+        creator,
+        options: JSON.stringify(options),
+        resolution_time: new Date(Number(resTime) * 1000).toISOString(),
+        status: "active",
+        transaction_hash: receipt.hash,
+        created_at: new Date().toISOString(),
+      });
+    }
+
     // Return the prediction ID and other information
     return {
       predictionId: event.args[0],
@@ -134,7 +168,29 @@ export async function placeStake(signer, predictionId, optionIndex, amount) {
     const tx = await contract.placeStake(predictionId, optionIndex, {
       value: amount,
     });
-    return await tx.wait();
+    const receipt = await tx.wait();
+
+    // Find the StakePlaced event in the receipt
+    const event = receipt.logs
+      .filter(
+        (log) =>
+          log.topics[0] ===
+          ethers.id("StakePlaced(uint256,uint256,address,uint256)")
+      )
+      .map((log) => contract.interface.parseLog(log))[0];
+
+    if (event) {
+      // Log the event to Supabase
+      await logContractEvent("StakePlaced", {
+        predictionId: predictionId.toString(),
+        optionIndex: optionIndex.toString(),
+        user: await signer.getAddress(),
+        amount: amount.toString(),
+        transactionHash: receipt.hash,
+      });
+    }
+
+    return receipt;
   } catch (error) {
     console.error("Error placing stake:", error);
     throw error;
@@ -160,7 +216,35 @@ export async function resolvePrediction(
       predictionId,
       winningOptionIndex
     );
-    return await tx.wait();
+    const receipt = await tx.wait();
+
+    // Find the PredictionResolved event in the receipt
+    const event = receipt.logs
+      .filter(
+        (log) =>
+          log.topics[0] === ethers.id("PredictionResolved(uint256,uint256)")
+      )
+      .map((log) => contract.interface.parseLog(log))[0];
+
+    if (event) {
+      // Log the event to Supabase
+      await logContractEvent("PredictionResolved", {
+        predictionId: predictionId.toString(),
+        winningOptionIndex: winningOptionIndex.toString(),
+        resolver: await signer.getAddress(),
+        transactionHash: receipt.hash,
+      });
+
+      // Sync prediction status to Supabase
+      await syncPredictionToSupabase(predictionId.toString(), {
+        winning_option_index: winningOptionIndex.toString(),
+        status: "resolved",
+        resolved_at: new Date().toISOString(),
+        transaction_hash: receipt.hash,
+      });
+    }
+
+    return receipt;
   } catch (error) {
     console.error("Error resolving prediction:", error);
     throw error;
@@ -178,7 +262,29 @@ export async function claimReward(signer, predictionId) {
 
   try {
     const tx = await contract.claimReward(predictionId);
-    return await tx.wait();
+    const receipt = await tx.wait();
+
+    // Find the RewardClaimed event in the receipt
+    const event = receipt.logs
+      .filter(
+        (log) =>
+          log.topics[0] === ethers.id("RewardClaimed(uint256,address,uint256)")
+      )
+      .map((log) => contract.interface.parseLog(log))[0];
+
+    if (event) {
+      const amount = event.args[2];
+
+      // Log the event to Supabase
+      await logContractEvent("RewardClaimed", {
+        predictionId: predictionId.toString(),
+        user: await signer.getAddress(),
+        amount: amount.toString(),
+        transactionHash: receipt.hash,
+      });
+    }
+
+    return receipt;
   } catch (error) {
     console.error("Error claiming reward:", error);
     throw error;
@@ -226,6 +332,19 @@ export async function getUserStake(
   }
 }
 
+// Setup event listeners for the contract
+export function setupEventListeners(provider, address = contractAddress) {
+  if (!provider || !address) {
+    console.warn(
+      "Provider or contract address not provided, event listeners not set up"
+    );
+    return { unsubscribe: () => {} };
+  }
+
+  const { setupContractEventListeners } = require("./eventLogger");
+  return setupContractEventListeners(provider, address);
+}
+
 export default {
   deployPredictionMarket,
   getPredictionMarketContract,
@@ -235,4 +354,5 @@ export default {
   claimReward,
   getPredictionOptions,
   getUserStake,
+  setupEventListeners,
 };
