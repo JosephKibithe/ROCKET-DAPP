@@ -1,0 +1,41 @@
+<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg">
+  <rect width="100" height="100" fill="#1A0933" />
+  
+  <!-- Small stars -->
+  <circle cx="10" cy="10" r="0.5" fill="white" opacity="0.7" />
+  <circle cx="25" cy="30" r="0.5" fill="white" opacity="0.7" />
+  <circle cx="50" cy="15" r="0.5" fill="white" opacity="0.7" />
+  <circle cx="70" cy="25" r="0.5" fill="white" opacity="0.7" />
+  <circle cx="85" cy="55" r="0.5" fill="white" opacity="0.7" />
+  <circle cx="15" cy="65" r="0.5" fill="white" opacity="0.7" />
+  <circle cx="35" cy="75" r="0.5" fill="white" opacity="0.7" />
+  <circle cx="60" cy="85" r="0.5" fill="white" opacity="0.7" />
+  <circle cx="90" cy="95" r="0.5" fill="white" opacity="0.7" />
+  <circle cx="55" cy="45" r="0.5" fill="white" opacity="0.7" />
+  
+  <!-- Medium stars -->
+  <circle cx="20" cy="20" r="1" fill="white" opacity="0.8" />
+  <circle cx="40" cy="60" r="1" fill="white" opacity="0.8" />
+  <circle cx="80" cy="40" r="1" fill="white" opacity="0.8" />
+  <circle cx="65" cy="70" r="1" fill="white" opacity="0.8" />
+  <circle cx="5" cy="95" r="1" fill="white" opacity="0.8" />
+  
+  <!-- Big stars with glow -->
+  <circle cx="75" cy="10" r="1.5" fill="white" opacity="0.9">
+    <animate attributeName="opacity" values="0.7;1;0.7" dur="3s" repeatCount="indefinite" />
+  </circle>
+  <circle cx="30" cy="45" r="1.5" fill="white" opacity="0.9">
+    <animate attributeName="opacity" values="0.7;1;0.7" dur="4s" repeatCount="indefinite" />
+  </circle>
+  <circle cx="90" cy="75" r="1.5" fill="white" opacity="0.9">
+    <animate attributeName="opacity" values="0.7;1;0.7" dur="5s" repeatCount="indefinite" />
+  </circle>
+  
+  <!-- Colored stars (pink/teal like the theme) -->
+  <circle cx="15" cy="40" r="1" fill="#FF2D75" opacity="0.8">
+    <animate attributeName="opacity" values="0.6;0.9;0.6" dur="4s" repeatCount="indefinite" />
+  </circle>
+  <circle cx="60" cy="55" r="1" fill="#00E0C7" opacity="0.8">
+    <animate attributeName="opacity" values="0.6;0.9;0.6" dur="3.5s" repeatCount="indefinite" />
+  </circle>
+</svg> 

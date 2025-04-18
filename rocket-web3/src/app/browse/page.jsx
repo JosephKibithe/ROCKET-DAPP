@@ -1,12 +1,13 @@
-import LiveBetFeed from "@/components/LiveBetFeed";
-import BetCreationForm from "@/components/BetCreationForm";
+"use client";
 
-export const metadata = {
-  title: "Browse Predictions - ROCKET",
-  description: "Browse live prediction markets on ROCKET.",
-};
+import { useState } from "react";
+import LiveBetFeed from "@/components/LiveBetFeed";
+import CategoriesPanel from "@/components/CategoriesPanel";
 
 export default function BrowsePage() {
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedStatus, setSelectedStatus] = useState("all");
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-dark to-black text-white">
       <div className="container mx-auto px-4 py-12">
@@ -21,54 +22,19 @@ export default function BrowsePage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           <div className="lg:col-span-3">
-            <div className="bg-dark/30 p-6 rounded h-min sticky top-4">
-              <h2 className="text-2xl font-heading text-primary mb-6">
-                Categories
-              </h2>
-              <ul className="space-y-2">
-                <li className="text-secondary hover:text-primary cursor-pointer transition-colors">
-                  All Categories
-                </li>
-                <li className="text-gray-300 hover:text-primary cursor-pointer transition-colors">
-                  Crypto
-                </li>
-                <li className="text-gray-300 hover:text-primary cursor-pointer transition-colors">
-                  Sports
-                </li>
-                <li className="text-gray-300 hover:text-primary cursor-pointer transition-colors">
-                  Politics
-                </li>
-                <li className="text-gray-300 hover:text-primary cursor-pointer transition-colors">
-                  Entertainment
-                </li>
-                <li className="text-gray-300 hover:text-primary cursor-pointer transition-colors">
-                  Science
-                </li>
-              </ul>
-
-              <h2 className="text-2xl font-heading text-primary mt-8 mb-6">
-                Status
-              </h2>
-              <ul className="space-y-2">
-                <li className="text-secondary hover:text-primary cursor-pointer transition-colors">
-                  All
-                </li>
-                <li className="text-gray-300 hover:text-primary cursor-pointer transition-colors">
-                  Active
-                </li>
-                <li className="text-gray-300 hover:text-primary cursor-pointer transition-colors">
-                  Resolved
-                </li>
-              </ul>
-
-              <div className="mt-8">
-                <BetCreationForm />
-              </div>
-            </div>
+            <CategoriesPanel
+              selectedCategory={selectedCategory}
+              selectedStatus={selectedStatus}
+              onCategoryChange={setSelectedCategory}
+              onStatusChange={setSelectedStatus}
+            />
           </div>
 
           <div className="lg:col-span-9">
-            <LiveBetFeed />
+            <LiveBetFeed
+              categoryFilter={selectedCategory}
+              statusFilter={selectedStatus}
+            />
           </div>
         </div>
       </div>

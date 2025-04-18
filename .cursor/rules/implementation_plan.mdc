@@ -3,7 +3,7 @@ description:
 globs: 
 alwaysApply: true
 ---
- # Implementation Plan for ROCKET – Web3 Prediction Market
+# Implementation Plan for ROCKET – Web3 Prediction Market
 
 ## Phase 1: Project Setup (Steps 1-10)
 1. Initialize a new Git repository for the project.
@@ -34,31 +34,88 @@ alwaysApply: true
 24. Test IPFS upload with a sample image.
 25. Log contract events to Supabase for tracking.
 
-## Phase 3: Frontend Development (Steps 26-40)
-26. Create `app/(public)/page.jsx` with a static landing page.
-27. Create `app/browse/page.jsx` with SSR for the main feed.
-28. Create `app/bet/[id]/page.jsx` with ISR for bet details.
-29. Create `app/dashboard/page.jsx` as a client-side component.
-30. Build `CategoriesPanel.jsx` with collapsible filters.
-31. Build `LiveBetFeed.jsx` with TanStack Virtual for performance.
-32. Build `WalletPanel.jsx` with tab system for dashboard.
-33. Create `BetCreationModal.jsx` with a 4-step wizard.
-34. Create `MemeEngine.jsx` with template selection and IPFS upload.
-35. Set up Zustand store in `lib/store.js` for global state.
-36. Integrate `wagmi` hooks in `WalletPanel.jsx` for wallet connection.
-37. Fetch live bets from Supabase in `LiveBetFeed.jsx`.
-38. Implement bet creation flow with contract deployment.
-39. Add Framer Motion animations to Bet Cards (3D tilt on hover).
-40. Optimize images with Next.js `<Image>` (quality 50).
+## Phase 3: Frontend Development (Steps 26-43)
 
-## Phase 4: Testing and Deployment (Steps 41-50)
-41. Test wallet connection with MetaMask, WalletConnect, and Coinbase Wallet.
-42. Test bet creation flow with gas estimation and contract deployment.
-43. Test Supabase Realtime updates on the live feed.
-44. Test mobile responsiveness (collapsible columns, full-screen modal).
-45. Fix UI bugs (e.g., alignment, overflow on mobile).
-46. Deploy the Next.js app to Vercel.
-47. Configure Vercel environment variables (Supabase, WalletConnect).
-48. Enable "Optimize for React" flag on Vercel.
-49. Test the deployed app end-to-end (browse to meme share).
-50. Document known issues and deployment steps in `README.md`.
+### 🛫 Entry & Public Views
+26. Create `app/(public)/page.jsx`:
+    - Static landing page with anime/cartoon-inspired branding.
+    - Include a single "Sign In" button that opens a modal with Google/Email + WalletConnect options.
+
+27. Create `app/browse/page.jsx`:
+    - Server-side rendered (SSR) prediction feed.
+    - Include `<LiveBetFeed />`, `<CategoriesPanel />`, and a filter bar.
+
+28. Create `app/bet/[id]/page.jsx`:
+    - ISR-enabled page for viewing bet details.
+    - Display odds, participants, resolution status, and a Meme preview if resolved.
+
+### 🧑‍💻 Dashboard Views
+29. Create `app/dashboard/page.jsx`:
+    - Client-side view showing user-specific data (wallet, bets, rewards).
+    - Embed `<WalletPanel />` and quick stats cards.
+
+30. Build `CategoriesPanel.jsx`:
+    - Collapsible sidebar or bottom drawer on mobile.
+    - Filter predictions by category and time.
+
+31. Build `LiveBetFeed.jsx`:
+    - Use TanStack Virtual for performant rendering of live bets.
+    - Apply Framer Motion hover tilt animation to each bet card.
+
+32. Build `WalletPanel.jsx`:
+    - Tab-based layout: Connected Wallet, History, Rewards.
+    - Integrate `wagmi` and `useWallet` hooks.
+
+33. Create `BetCreationModal.jsx`:
+    - 4-step wizard modal with animated transitions.
+    - Step 1: Set prediction topic and details.
+    - Step 2: Choose resolution mechanism (oracle/manual).
+    - Step 3: Set stakes and deadlines.
+    - Step 4: Confirm & sign.
+
+34. Create `MemeEngine.jsx`:
+    - Template selection and preview generator.
+    - IPFS upload for storing the final meme with metadata.
+
+35. Set up Zustand store in `lib/store.js`:
+    - Manage global UI state (e.g., modal open, user auth, filter params).
+
+36. Integrate `wagmi` + WalletConnect hooks in `WalletPanel.jsx`:
+    - Connect wallet, fetch balance, and show network.
+
+37. Fetch bets from Supabase and add real-time listener in `LiveBetFeed.jsx`.
+
+38. Implement bet creation flow:
+    - Call smart contract deployment in `scripts/`.
+    - Use hooks in the modal to deploy and log results.
+
+39. Animate Bet Cards:
+    - Framer Motion: 3D tilt hover + staggered fade-in on mount.
+
+40. Optimize image loading:
+    - Use Next.js `<Image>` with `quality={50}` and lazy loading.
+
+41. Implement Bottom Navigation for Mobile:
+    - Create `BottomNav.jsx`.
+    - Include icons for Home 🏠, Create ➕, Filters 🔍, Profile 👤.
+    - Use Tailwind `fixed bottom-0` and `flex justify-around`.
+
+42. Theme and Typography:
+    - Ensure anime/Ghibli-inspired font is loaded.
+    - Add `font-anime` class to `tailwind.config.js` and use in headings.
+
+43. Responsive and Accessibility:
+    - Ensure WCAG 2.1 AA compliant color contrast.
+    - Add focus states and keyboard navigation for modals and menus.
+
+## Phase 4: Testing and Deployment (Steps 44-50)
+44. Test wallet connection with MetaMask, WalletConnect, and Coinbase Wallet.
+45. Test bet creation flow with gas estimation and contract deployment.
+46. Test Supabase Realtime updates on the live feed.
+47. Test mobile responsiveness (collapsible columns, full-screen modal).
+48. Fix UI bugs (e.g., alignment, overflow on mobile).
+49. Deploy the Next.js app to Vercel.
+50. Configure Vercel environment variables (Supabase, WalletConnect).
+51. Enable "Optimize for React" flag on Vercel.
+52. Test the deployed app end-to-end (browse to meme share).
+53. Document known issues and deployment steps in `README.md`.
