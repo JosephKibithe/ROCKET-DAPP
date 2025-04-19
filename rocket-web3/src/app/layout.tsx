@@ -4,6 +4,8 @@ import "./globals.css";
 import "./tailwind.css";
 import Web3Provider from "../components/Web3Provider";
 import EventListenersWrapper from "../components/EventListenersWrapper";
+import BottomNav from "../components/BottomNav";
+import { AccessibilityProvider } from "../components/AccessibilityProvider";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -31,10 +33,15 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${comicNeue.variable} antialiased bg-gradient-to-br from-dark to-black text-white`}
       >
-        <Web3Provider>
-          <EventListenersWrapper />
-          {children}
-        </Web3Provider>
+        <AccessibilityProvider>
+          <Web3Provider>
+            <EventListenersWrapper />
+            <main id="main-content" className="pb-20">
+              {children}
+            </main>
+            <BottomNav />
+          </Web3Provider>
+        </AccessibilityProvider>
       </body>
     </html>
   );
