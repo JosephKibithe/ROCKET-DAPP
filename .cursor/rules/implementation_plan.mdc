@@ -113,7 +113,7 @@ alwaysApply: true
 45. Test bet creation flow with gas estimation and contract deployment.
 46. Test Supabase Realtime updates on the live feed.
 47. Test mobile responsiveness (collapsible columns, full-screen modal).
-48. Fix UI bugs (e.g., alignment, overflow on mobile).
+48. Fix UI bugs (e.g., alignment, overflow).
 49. Deploy the Next.js app to Vercel.
 50. Configure Vercel environment variables (Supabase, WalletConnect).
 51. Enable "Optimize for React" flag on Vercel.

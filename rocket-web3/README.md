@@ -1,36 +1,140 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ROCKET Web3 Prediction Market
+
+A decentralized prediction market built on PulseChain and Ethereum, allowing users to create and participate in prediction markets.
+
+## Features
+
+- Connect with MetaMask, WalletConnect, or Coinbase Wallet
+- User authentication with email/password or Google
+- Create and participate in prediction markets
+- Real-time updates with Supabase Realtime
+- Meme generation for winning predictions
+- Mobile-responsive design
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js (v18+)
+- Yarn or npm
+- MetaMask extension (for local testing)
+- WalletConnect Project ID (for wallet connections)
+- Supabase account (for database and auth)
+
+### Installation
+
+1. Clone the repository:
+
+   ```bash
+   git clone https://github.com/yourusername/rocket-web3.git
+   cd rocket-web3
+   ```
+
+2. Install dependencies:
+
+   ```bash
+   yarn install
+   # or
+   npm install
+   ```
+
+3. Set up environment variables:
+
+   ```bash
+   cp .env.example .env.local
+   ```
+
+   Then edit `.env.local` to add your:
+
+   - WalletConnect Project ID (get from https://cloud.walletconnect.com)
+   - Supabase URL and keys
+   - Contract addresses (if deployed)
+
+4. Run the development server:
+
+   ```bash
+   yarn dev
+   # or
+   npm run dev
+   ```
+
+5. Open [http://localhost:3000](http://localhost:3000) in your browser to see the app.
+
+## Wallet Connection Setup
+
+The app supports multiple wallet connection methods:
+
+1. **MetaMask**: No additional setup required for users with the MetaMask extension installed
+2. **WalletConnect**: Requires a project ID from [WalletConnect Cloud](https://cloud.walletconnect.com)
+3. **Coinbase Wallet**: No additional setup required
+
+To enable WalletConnect:
+
+1. Sign up at [WalletConnect Cloud](https://cloud.walletconnect.com)
+2. Create a new project
+3. Copy the project ID to your `.env.local` file:
+   ```
+   NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your_project_id
+   ```
+
+## Authentication
+
+The app supports both Web3 wallet authentication and traditional email/password authentication:
+
+- **Wallet Authentication**: Connect any supported wallet to authenticate
+- **Email/Password**: Create an account with username, email, and password
+- **Google OAuth**: Quick sign-in with Google account
+
+## Project Structure
+
+- `/app` - Next.js app router pages and layouts
+- `/components` - Reusable React components
+- `/contracts` - Solidity smart contracts
+- `/lib` - Utility functions and configuration
+- `/public` - Static assets
+- `/styles` - Global CSS and Tailwind configuration
+
+## Testing
+
+Run tests with:
 
 ```bash
-npm run dev
+yarn test
 # or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm test
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Run wallet connection tests separately:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+yarn test:wallet
+# or
+npm run test:wallet
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Deployment
 
-## Learn More
+1. Build the project:
 
-To learn more about Next.js, take a look at the following resources:
+   ```bash
+   yarn build
+   # or
+   npm run build
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+2. Deploy to Vercel:
+   ```bash
+   vercel deploy
+   ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## License
 
-## Deploy on Vercel
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Acknowledgments
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- [Next.js](https://nextjs.org/)
+- [Wagmi](https://wagmi.sh/)
+- [Supabase](https://supabase.io/)
+- [TailwindCSS](https://tailwindcss.com/)
+- [ShadcnUI](https://ui.shadcn.com/)

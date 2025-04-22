@@ -3,10 +3,15 @@
 import { WagmiProvider, createConfig, http } from "wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { mainnet, sepolia } from "wagmi/chains";
-import { injected } from "wagmi/connectors";
+import {
+  injected,
+  metaMask,
+  walletConnect,
+  coinbaseWallet,
+} from "wagmi/connectors";
 import { useAccount, useConnect, useBalance, useChainId } from "wagmi";
 import { useEffect } from "react";
-import { useAppStore } from "../../lib/store";
+import { useAppStore } from "@/lib/store";
 
 // Create a client for React Query
 const queryClient = new QueryClient({
@@ -21,12 +26,22 @@ const queryClient = new QueryClient({
 // Create wagmi config directly in the component
 const config = createConfig({
   chains: [sepolia, mainnet],
-  connectors: [injected()],
+  connectors: [
+    metaMask(),
+    walletConnect({
+      projectId:
+        process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || "your-project-id",
+    }),
+    coinbaseWallet({
+      appName: "ROCKET Prediction Market",
+    }),
+    injected(),
+  ],
   transports: {
     [sepolia.id]: http(),
     [mainnet.id]: http(),
   },
-  multiInjectedProviderDiscovery: false,
+  multiInjectedProviderDiscovery: true,
 });
 
 export default function Web3Provider({ children }) {

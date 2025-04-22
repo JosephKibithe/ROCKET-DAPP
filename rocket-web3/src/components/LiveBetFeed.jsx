@@ -1,7 +1,12 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { subscribeToLiveBets, fetchBets } from "../../lib/supabase";
+import {
+  supabase,
+  mockBets,
+  fetchBets as supabaseFetchBets,
+  subscribeToLiveBets,
+} from "../../lib/supabase";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useVirtualizer } from "@tanstack/react-virtual";
@@ -14,7 +19,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, Tag, Users, TrendingUp } from "lucide-react";
+import { Calendar, Clock, Tag, Users, TrendingUp, Filter } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
 
 // Sample data for development
 const SAMPLE_BETS = [
@@ -218,141 +224,312 @@ const BetCard = ({ bet, index }) => {
   );
 };
 
+// Add a check for Supabase initialization
+const initializeSupabase = () => {
+  try {
+    return supabase;
+  } catch (error) {
+    console.error("Error initializing Supabase:", error);
+    return null;
+  }
+};
+
+// Use the initialized Supabase instance or fallback
+const supabaseClient = initializeSupabase();
+
 export default function LiveBetFeed({
-  categoryFilter = "all",
-  statusFilter = "all",
+  category = "",
+  status = "",
+  limit = 10,
+  showFilters = true,
+  isCompact = false,
 }) {
   const [bets, setBets] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const parentRef = useRef(null);
+  const [currentCategory, setCurrentCategory] = useState(category);
+  const [currentStatus, setCurrentStatus] = useState(status);
+  const [currentOffset, setCurrentOffset] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+  const isDevMode = process.env.NODE_ENV === "development";
 
-  // Filter bets based on category and status
-  const filteredBets = bets.filter(
-    (bet) =>
-      (categoryFilter === "all" || bet.category === categoryFilter) &&
-      (statusFilter === "all" || bet.status === statusFilter)
-  );
-
+  // Fetch bets on component mount and when filters change
   useEffect(() => {
-    // Initial fetch of bets
-    const loadBets = async () => {
+    const fetchBetsData = async () => {
+      setIsLoading(true);
+      setError(null);
+
       try {
-        setLoading(true);
-
-        // Check if we're in a development environment with no Supabase config
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-        const isDevMode = !supabaseUrl || supabaseUrl === "your_supabase_url";
-
-        if (isDevMode) {
-          console.log("Using sample data in development mode");
-          setBets(SAMPLE_BETS);
-          setLoading(false);
-          return;
+        // Reset pagination when filters change
+        if (currentOffset === 0) {
+          setBets([]);
         }
 
-        const fetchedBets = await fetchBets({});
-        setBets(fetchedBets);
+        const fetchedBets = await supabaseFetchBets({
+          category: currentCategory || undefined,
+          status: currentStatus || undefined,
+          limit,
+          offset: currentOffset,
+        });
+
+        setBets((prevBets) =>
+          currentOffset === 0 ? fetchedBets : [...prevBets, ...fetchedBets]
+        );
+
+        setHasMore(fetchedBets.length === limit);
       } catch (err) {
         console.error("Error fetching bets:", err);
-        setError("Failed to load bets. Please try again later.");
-
-        // Fallback to sample data in case of error
-        setBets(SAMPLE_BETS);
+        setError("Failed to load predictions. Please try again.");
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
 
-    loadBets();
+    fetchBetsData();
+  }, [currentCategory, currentStatus, currentOffset, limit]);
 
-    // Only set up subscription if we're not in dev mode with dummy data
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const isDevMode = !supabaseUrl || supabaseUrl === "your_supabase_url";
+  // Subscribe to real-time updates
+  useEffect(() => {
+    let subscription;
 
-    if (!isDevMode) {
+    if (supabaseClient) {
       // Subscribe to real-time updates
-      const subscription = subscribeToLiveBets((payload) => {
+      subscription = subscribeToLiveBets((payload) => {
         console.log("Real-time update received:", payload);
 
         // Handle different types of changes
-        const { eventType, new: newRecord, old: oldRecord } = payload;
-
-        if (eventType === "INSERT") {
-          // Add the new bet to the list
-          setBets((currentBets) => [newRecord, ...currentBets]);
-        } else if (eventType === "UPDATE") {
-          // Update the bet in the list
-          setBets((currentBets) =>
-            currentBets.map((bet) =>
-              bet.id === newRecord.id ? newRecord : bet
+        if (payload.eventType === "INSERT") {
+          setBets((prevBets) => [payload.new, ...prevBets]);
+        } else if (payload.eventType === "UPDATE") {
+          setBets((prevBets) =>
+            prevBets.map((bet) =>
+              bet.id === payload.new.id ? payload.new : bet
             )
           );
-        } else if (eventType === "DELETE") {
-          // Remove the bet from the list
-          setBets((currentBets) =>
-            currentBets.filter((bet) => bet.id !== oldRecord.id)
+        } else if (payload.eventType === "DELETE") {
+          setBets((prevBets) =>
+            prevBets.filter((bet) => bet.id !== payload.old.id)
           );
         }
       });
-
-      // Clean up subscription on unmount
-      return () => {
-        subscription.unsubscribe();
-      };
     }
+
+    // Clean up subscription on unmount
+    return () => {
+      if (subscription) {
+        subscription.unsubscribe();
+      }
+    };
   }, []);
 
-  if (loading) {
-    return (
-      <div className="flex justify-center p-8">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
+  // Handle filters
+  const applyFilters = (newCategory, newStatus) => {
+    setCurrentCategory(newCategory);
+    setCurrentStatus(newStatus);
+    setCurrentOffset(0); // Reset pagination when filters change
+  };
 
-  if (error) {
-    return (
-      <div className="bg-red-500/20 border border-red-500 text-red-500 p-4 rounded-lg">
-        <p className="font-semibold">Error</p>
-        <p>{error}</p>
-      </div>
-    );
-  }
+  // Load more bets
+  const loadMore = () => {
+    setCurrentOffset((prevOffset) => prevOffset + limit);
+  };
 
-  if (filteredBets.length === 0) {
+  // No bets to display
+  if (!isLoading && bets.length === 0) {
     return (
-      <div className="p-8 bg-dark/50 border border-white/10 rounded-lg text-center">
-        <p className="text-xl font-heading mb-2">No predictions found</p>
-        <p className="text-gray-400">
-          Try selecting a different category or status.
+      <div className="text-center py-12">
+        <h3 className="text-xl font-medium mb-2">No predictions found</h3>
+        <p className="text-white/60">
+          {error || "Try adjusting your filters or create a new prediction."}
         </p>
       </div>
     );
   }
 
-  // Render the predictions in a simple list instead of using virtualization
   return (
-    <div>
-      <h2 className="text-2xl font-heading text-primary mb-4">
-        Live Prediction Feed
-        {categoryFilter !== "all" && (
-          <span>
-            {" "}
-            - {categoryFilter.charAt(0).toUpperCase() + categoryFilter.slice(1)}
-          </span>
-        )}
-      </h2>
+    <div className="space-y-6">
+      {/* Filters */}
+      {showFilters && (
+        <div className="mb-6">
+          <button
+            onClick={() => setIsFiltersOpen(!isFiltersOpen)}
+            className="flex items-center gap-2 text-white/70 hover:text-white mb-4 md:hidden"
+          >
+            <Filter size={16} />
+            {isFiltersOpen ? "Hide Filters" : "Show Filters"}
+          </button>
 
-      <div
-        ref={parentRef}
-        className="overflow-auto max-h-[800px] pr-2 space-y-6"
-      >
-        {filteredBets.map((bet, index) => (
-          <div key={bet.id} className="mb-6">
-            <BetCard bet={bet} index={index} />
+          <div
+            className={`grid grid-cols-1 md:grid-cols-3 gap-4 ${
+              isFiltersOpen ? "block" : "hidden md:grid"
+            }`}
+          >
+            {/* Category filter */}
+            <div>
+              <label className="block text-sm font-medium text-white/70 mb-2">
+                Category
+              </label>
+              <select
+                value={currentCategory}
+                onChange={(e) => applyFilters(e.target.value, currentStatus)}
+                className="bg-dark/50 border border-white/10 rounded-lg p-2 w-full text-white"
+              >
+                <option value="">All Categories</option>
+                <option value="crypto">Crypto</option>
+                <option value="sports">Sports</option>
+                <option value="politics">Politics</option>
+                <option value="entertainment">Entertainment</option>
+                <option value="tech">Tech</option>
+              </select>
+            </div>
+
+            {/* Status filter */}
+            <div>
+              <label className="block text-sm font-medium text-white/70 mb-2">
+                Status
+              </label>
+              <select
+                value={currentStatus}
+                onChange={(e) => applyFilters(currentCategory, e.target.value)}
+                className="bg-dark/50 border border-white/10 rounded-lg p-2 w-full text-white"
+              >
+                <option value="">All Status</option>
+                <option value="active">Active</option>
+                <option value="resolved">Resolved</option>
+                <option value="canceled">Canceled</option>
+              </select>
+            </div>
+
+            {/* Sort filter (placeholder for future implementation) */}
+            <div>
+              <label className="block text-sm font-medium text-white/70 mb-2">
+                Sort By
+              </label>
+              <select
+                defaultValue="newest"
+                className="bg-dark/50 border border-white/10 rounded-lg p-2 w-full text-white"
+              >
+                <option value="newest">Newest First</option>
+                <option value="stakes">Highest Stakes</option>
+                <option value="ending">Ending Soon</option>
+              </select>
+            </div>
           </div>
+        </div>
+      )}
+
+      {/* Bet cards */}
+      <div className="space-y-4">
+        {bets.map((bet, index) => (
+          <Link href={`/bet/${bet.id}`} key={bet.id}>
+            <motion.div
+              className="bg-dark/50 border border-white/10 rounded-lg overflow-hidden hover:border-primary/50 transition-colors"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.05, duration: 0.3 }}
+              whileHover={{ y: -4 }}
+            >
+              <div className="p-4">
+                <div className="flex justify-between items-start mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="bg-primary/20 text-primary text-xs px-2 py-1 rounded">
+                      {bet.category || "Misc"}
+                    </span>
+                    {bet.trending && (
+                      <span className="bg-orange-500/20 text-orange-500 text-xs px-2 py-1 rounded flex items-center">
+                        <TrendingUp size={12} className="mr-1" /> Trending
+                      </span>
+                    )}
+                  </div>
+                  <ArrowUpRight
+                    size={16}
+                    className="text-white/50 group-hover:text-primary"
+                  />
+                </div>
+
+                <h3 className="text-lg font-medium mb-1">
+                  {bet.title || bet.question}
+                </h3>
+
+                {!isCompact && (
+                  <p className="text-white/70 text-sm mb-3">
+                    {bet.description || "No description provided."}
+                  </p>
+                )}
+
+                <div className="flex justify-between items-center text-sm text-white/60">
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center">
+                      <Calendar size={14} className="mr-1" />
+                      {formatDistanceToNow(new Date(bet.created_at), {
+                        addSuffix: true,
+                      })}
+                    </div>
+                    {!isCompact && (
+                      <div className="flex items-center">
+                        <Clock size={14} className="mr-1" />
+                        Ends{" "}
+                        {formatDistanceToNow(
+                          new Date(bet.end_date || bet.resolution_time),
+                          {
+                            addSuffix: true,
+                          }
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <div className="font-medium text-white">
+                    {bet.yes_stake
+                      ? `${(
+                          Number(bet.yes_stake) + Number(bet.no_stake || 0)
+                        ).toFixed(2)} ETH`
+                      : "0 ETH"}
+                  </div>
+                </div>
+              </div>
+
+              {!isCompact && (
+                <div className="bg-dark/70 p-3 flex justify-between">
+                  <div className="flex items-center gap-1">
+                    <span className="text-green-400 font-medium">Yes</span>{" "}
+                    <span className="text-white/60">
+                      {bet.yes_stake ? `${bet.yes_stake} ETH` : "No stakes yet"}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="text-red-400 font-medium">No</span>{" "}
+                    <span className="text-white/60">
+                      {bet.no_stake ? `${bet.no_stake} ETH` : "No stakes yet"}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          </Link>
         ))}
+
+        {/* Loading state */}
+        {isLoading && (
+          <div className="text-center py-8">
+            <div className="animate-pulse">
+              <div className="bg-dark/50 h-32 rounded-lg mb-4"></div>
+              <div className="bg-dark/50 h-32 rounded-lg mb-4"></div>
+              <div className="bg-dark/50 h-32 rounded-lg"></div>
+            </div>
+          </div>
+        )}
+
+        {/* Load More button */}
+        {hasMore && bets.length > 0 && (
+          <button
+            onClick={loadMore}
+            className="w-full py-3 bg-dark/50 hover:bg-dark/70 border border-white/10 rounded-lg text-white/70 transition-colors"
+            disabled={isLoading}
+          >
+            {isLoading ? "Loading..." : "Load More"}
+          </button>
+        )}
       </div>
     </div>
   );

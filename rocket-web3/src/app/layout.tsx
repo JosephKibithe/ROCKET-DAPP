@@ -6,6 +6,7 @@ import Web3Provider from "../components/Web3Provider";
 import EventListenersWrapper from "../components/EventListenersWrapper";
 import BottomNav from "../components/BottomNav";
 import { AccessibilityProvider } from "../components/AccessibilityProvider";
+import Header from "../components/Header";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -36,6 +37,7 @@ export default function RootLayout({
         <AccessibilityProvider>
           <Web3Provider>
             <EventListenersWrapper />
+            <Header />
             <main id="main-content" className="pb-20">
               {children}
             </main>
