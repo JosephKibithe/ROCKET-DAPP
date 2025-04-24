@@ -31,9 +31,19 @@ module.exports = {
       chainId: 1337,
     },
     sepolia: {
-      url: `https://sepolia.infura.io/v3/${INFURA_API_KEY}`,
+      url: "https://cloudflare-eth.com/v1/sepolia",
       accounts: [PRIVATE_KEY],
       chainId: 11155111,
+      timeout: 120000
+    },
+    sepoliaDevnet: {
+      url: "http://127.0.0.1:8545",
+      chainId: 11155111,
+      forking: {
+        url: "https://rpc.sepolia.org",
+        blockNumber: 4765000
+      },
+      accounts: [PRIVATE_KEY]
     },
     mainnet: {
       url: `https://mainnet.infura.io/v3/${INFURA_API_KEY}`,
