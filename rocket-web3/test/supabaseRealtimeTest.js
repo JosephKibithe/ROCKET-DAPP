@@ -1,7 +1,6 @@
 /**
  * Supabase Realtime Test
  * Tests the Supabase Realtime subscription functionality
- * Run with: `npx vitest run test/supabaseRealtimeTest.js`
  */
 
 import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
@@ -42,6 +41,9 @@ describe("Supabase Realtime Tests", () => {
   beforeAll(() => {
     console.log("Setting up Supabase Realtime tests...");
 
+    // Clear any existing data
+    mockSupabaseClient.resetData();
+
     // Set up mock Supabase with test data
     mockSupabaseClient.setData("bets", MOCK_BETS);
 
@@ -80,7 +82,6 @@ describe("Supabase Realtime Tests", () => {
 
   it("should fetch bets from Supabase", async () => {
     const bets = await fetchBets({});
-
     console.log("Fetched bets:", bets);
 
     // Verify the bets were fetched
@@ -91,7 +92,6 @@ describe("Supabase Realtime Tests", () => {
 
   it("should filter bets by category", async () => {
     const bets = await fetchBets({ category: "crypto" });
-
     console.log("Filtered bets:", bets);
 
     // Verify the filtering works
@@ -126,12 +126,17 @@ describe("Supabase Realtime Tests", () => {
     // Verify the bet was added to the database
     const bets = await fetchBets({});
     expect(bets).toHaveLength(MOCK_BETS.length + 1);
-    expect(bets[2].id).toBe(newBet.id);
+    const insertedBet = bets.find((b) => b.id === newBet.id);
+    expect(insertedBet).toBeDefined();
+    expect(insertedBet.question).toBe(newBet.question);
   });
 
   it("should receive UPDATE events", async () => {
     // Simulate a bet being updated
-    const updatedBet = { ...MOCK_BETS[0], question: "Updated Question" };
+    const updatedBet = {
+      ...MOCK_BETS[0],
+      question: "Updated Question",
+    };
 
     // Trigger an UPDATE event
     mockSupabaseClient.triggerEvent("UPDATE", {
@@ -149,7 +154,7 @@ describe("Supabase Realtime Tests", () => {
     // Verify the bet was updated in the database
     const bets = await fetchBets({});
     const bet = bets.find((b) => b.id === updatedBet.id);
-    expect(bet.question).toBe(updatedBet.question);
+    expect(bet.question).toBe("Updated Question");
   });
 
   it("should receive DELETE events", async () => {

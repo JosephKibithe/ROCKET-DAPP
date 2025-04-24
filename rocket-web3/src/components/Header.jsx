@@ -1,13 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Wallet, Menu, X, User } from "lucide-react";
 import { useAccount } from "wagmi";
 import { useAppStore } from "@/lib/store";
 import WalletConnectModal from "./WalletConnectModal";
-import SignInModal from "./SignInModal";
 
 /**
  * Header component with navigation and wallet connection
@@ -17,9 +16,14 @@ export default function Header() {
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
-  const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const { isConnected } = useAccount();
-  const { wallet, user, isAuthenticated, signOut } = useAppStore();
+  const { wallet, user, signOut } = useAppStore();
+
+  // Prevent hydration mismatch by only rendering dynamic content after mount
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Navigation links
   const navLinks = [
@@ -57,72 +61,65 @@ export default function Header() {
             ))}
           </nav>
 
-          {/* Auth and Wallet Buttons - Desktop */}
-          <div className="hidden md:flex items-center space-x-3">
-            {!isConnected && (
-              <button
-                onClick={() => setIsWalletModalOpen(true)}
-                className="bg-dark hover:bg-dark/70 text-white px-4 py-2 rounded-lg flex items-center border border-white/20"
-              >
-                <Wallet size={18} className="mr-2" />
-                Connect Wallet
-              </button>
-            )}
-
-            {isAuthenticated ? (
-              <div className="relative group">
-                <button className="bg-primary/20 hover:bg-primary/30 text-white px-4 py-2 rounded-lg flex items-center">
-                  <User size={18} className="mr-2" />
-                  {user?.username || "User"}
+          {/* Wallet Button - Desktop */}
+          {mounted && (
+            <div className="hidden md:flex items-center space-x-3">
+              {!isConnected ? (
+                <button
+                  onClick={() => setIsWalletModalOpen(true)}
+                  className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg flex items-center"
+                >
+                  <Wallet size={18} className="mr-2" />
+                  Connect Wallet
                 </button>
-                <div className="absolute right-0 mt-2 w-48 bg-dark/95 border border-white/10 rounded-lg shadow-xl z-20 hidden group-hover:block">
-                  <div className="p-2">
-                    <Link
-                      href="/profile"
-                      className="block px-4 py-2 text-white hover:bg-white/10 rounded-md"
-                    >
-                      Profile
-                    </Link>
-                    <Link
-                      href="/settings"
-                      className="block px-4 py-2 text-white hover:bg-white/10 rounded-md"
-                    >
-                      Settings
-                    </Link>
-                    <button
-                      onClick={() => signOut()}
-                      className="block w-full text-left px-4 py-2 text-red-400 hover:bg-white/10 rounded-md"
-                    >
-                      Sign Out
-                    </button>
+              ) : (
+                <Link
+                  href="/dashboard"
+                  className="bg-dark hover:bg-dark/70 text-white px-4 py-2 rounded-lg flex items-center border border-white/20"
+                >
+                  <Wallet size={18} className="mr-2" />
+                  {wallet?.address ? (
+                    <span>
+                      {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
+                    </span>
+                  ) : (
+                    "My Wallet"
+                  )}
+                </Link>
+              )}
+
+              {user && (
+                <div className="relative group">
+                  <button className="bg-primary/20 hover:bg-primary/30 text-white px-4 py-2 rounded-lg flex items-center">
+                    <User size={18} className="mr-2" />
+                    {user?.username || "User"}
+                  </button>
+                  <div className="absolute right-0 mt-2 w-48 bg-dark/95 border border-white/10 rounded-lg shadow-xl z-20 hidden group-hover:block">
+                    <div className="p-2">
+                      <Link
+                        href="/profile"
+                        className="block px-4 py-2 text-white hover:bg-white/10 rounded-md"
+                      >
+                        Profile
+                      </Link>
+                      <Link
+                        href="/settings"
+                        className="block px-4 py-2 text-white hover:bg-white/10 rounded-md"
+                      >
+                        Settings
+                      </Link>
+                      <button
+                        onClick={() => signOut()}
+                        className="block w-full text-left px-4 py-2 text-red-400 hover:bg-white/10 rounded-md"
+                      >
+                        Sign Out
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ) : (
-              <button
-                onClick={() => setIsSignInModalOpen(true)}
-                className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg"
-              >
-                Sign In
-              </button>
-            )}
-
-            {isConnected && (
-              <Link
-                href="/dashboard"
-                className="bg-dark hover:bg-dark/70 text-white px-4 py-2 rounded-lg flex items-center border border-white/20"
-              >
-                <Wallet size={18} className="mr-2" />
-                {wallet?.address ? (
-                  <span>
-                    {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
-                  </span>
-                ) : (
-                  "My Wallet"
-                )}
-              </Link>
-            )}
-          </div>
+              )}
+            </div>
+          )}
 
           {/* Mobile Menu Button */}
           <button
@@ -152,20 +149,20 @@ export default function Header() {
                 </Link>
               ))}
               <div className="pt-2 space-y-3">
-                {!isConnected && (
+                {mounted && !isConnected && (
                   <button
                     onClick={() => {
                       setIsWalletModalOpen(true);
                       setIsMenuOpen(false);
                     }}
-                    className="bg-dark hover:bg-dark/70 text-white px-4 py-2 rounded-lg flex items-center border border-white/20 w-full"
+                    className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg flex items-center w-full justify-center"
                   >
                     <Wallet size={18} className="mr-2" />
                     Connect Wallet
                   </button>
                 )}
 
-                {isAuthenticated ? (
+                {user && (
                   <>
                     <div className="bg-primary/20 text-white px-4 py-2 rounded-lg flex items-center">
                       <User size={18} className="mr-2" />
@@ -195,16 +192,6 @@ export default function Header() {
                       Sign Out
                     </button>
                   </>
-                ) : (
-                  <button
-                    onClick={() => {
-                      setIsSignInModalOpen(true);
-                      setIsMenuOpen(false);
-                    }}
-                    className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg block text-center w-full"
-                  >
-                    Sign In
-                  </button>
                 )}
 
                 {isConnected && (
@@ -234,12 +221,6 @@ export default function Header() {
       <WalletConnectModal
         isOpen={isWalletModalOpen}
         onClose={() => setIsWalletModalOpen(false)}
-      />
-
-      {/* Sign In Modal */}
-      <SignInModal
-        isOpen={isSignInModalOpen}
-        onClose={() => setIsSignInModalOpen(false)}
       />
     </header>
   );

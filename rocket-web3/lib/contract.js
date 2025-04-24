@@ -76,7 +76,24 @@ export function getPredictionMarketContract(
     );
   }
 
-  return new ethers.Contract(address, PredictionMarketABI, signerOrProvider);
+  try {
+    // Create contract instance with proper ABI and address
+    const contract = new ethers.Contract(
+      address,
+      PredictionMarketABI,
+      signerOrProvider
+    );
+
+    // If we have a signer, connect it to the contract
+    if (signerOrProvider.provider) {
+      return contract.connect(signerOrProvider);
+    }
+
+    return contract;
+  } catch (error) {
+    console.error("Error creating contract instance:", error);
+    throw error;
+  }
 }
 
 /**

@@ -5,7 +5,7 @@ A decentralized prediction market built on PulseChain and Ethereum, allowing use
 ## Features
 
 - Connect with MetaMask, WalletConnect, or Coinbase Wallet
-- User authentication with email/password or Google
+- Web3 wallet-based authentication
 - Create and participate in prediction markets
 - Real-time updates with Supabase Realtime
 - Meme generation for winning predictions
@@ -62,7 +62,7 @@ A decentralized prediction market built on PulseChain and Ethereum, allowing use
 
 ## Wallet Connection Setup
 
-The app supports multiple wallet connection methods:
+The app uses web3 wallets for both authentication and transactions:
 
 1. **MetaMask**: No additional setup required for users with the MetaMask extension installed
 2. **WalletConnect**: Requires a project ID from [WalletConnect Cloud](https://cloud.walletconnect.com)
@@ -77,13 +77,27 @@ To enable WalletConnect:
    NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your_project_id
    ```
 
-## Authentication
+## Web3 Authentication
 
-The app supports both Web3 wallet authentication and traditional email/password authentication:
+ROCKET uses Web3 wallets exclusively for authentication, offering several benefits:
 
-- **Wallet Authentication**: Connect any supported wallet to authenticate
-- **Email/Password**: Create an account with username, email, and password
-- **Google OAuth**: Quick sign-in with Google account
+- No password to remember or reset
+- Enhanced security through cryptographic signatures
+- Direct integration with blockchain transactions
+- Simplified user experience
+
+### Database Schema for Web3 Authentication
+
+The application stores wallet data in the following tables:
+
+- `wallet_users`: Stores user profile info associated with wallet addresses
+- `wallet_stakes`: Records user predictions and stakes
+- `bets`: Contains prediction markets (linked to creator wallets)
+
+To set up the database schema:
+
+1. Run the migration script in `supabase/migrations/0001_web3_auth.sql`
+2. This will create the necessary tables, indexes, and functions
 
 ## Project Structure
 
@@ -93,6 +107,7 @@ The app supports both Web3 wallet authentication and traditional email/password 
 - `/lib` - Utility functions and configuration
 - `/public` - Static assets
 - `/styles` - Global CSS and Tailwind configuration
+- `/supabase` - Database schema, migrations, and functions
 
 ## Testing
 

@@ -1,0 +1,97 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Component Structure for ROCKET UI
+
+## Component Organization
+
+### Atomic Design Pattern
+- **Atoms**: Basic building blocks (buttons, inputs, labels)
+- **Molecules**: Combinations of atoms (search bars, form fields)
+- **Organisms**: Complex UI sections (LiveBetFeed, WalletPanel)
+- **Templates**: Page layouts with placeholder content
+- **Pages**: Specific instances of templates with real data
+
+## Component File Structure
+
+```tsx
+// Standard component structure
+import { useState, useEffect } from 'react'
+import { motion } from 'framer-motion'
+import { useStore } from '@/lib/store'
+
+// Types at the top
+type ComponentProps = {
+  // Props definition
+}
+
+// Component definition
+export function ComponentName({ prop1, prop2 }: ComponentProps) {
+  // State hooks
+  const [state, setState] = useState()
+  
+  // Store access
+  const { globalState } = useStore()
+  
+  // Effects
+  useEffect(() => {
+    // Side effects
+  }, [dependencies])
+  
+  // Event handlers
+  const handleEvent = () => {
+    // Event handling logic
+  }
+  
+  // Conditional rendering helpers
+  const renderContent = () => {
+    if (condition) return <div>Conditional content</div>
+    return <div>Default content</div>
+  }
+  
+  // Main render
+  return (
+    <motion.div 
+      className="tailwind-classes-here"
+      animate={{ opacity: 1 }}
+      initial={{ opacity: 0 }}
+    >
+      {renderContent()}
+    </motion.div>
+  )
+}
+```
+
+## Styling Approach
+
+- Use Tailwind CSS classes directly on elements
+- For complex animations, use Framer Motion
+- For component variants, use conditional class names:
+  ```tsx
+  <button 
+    className={`
+      base-classes 
+      ${variant === 'primary' ? 'primary-classes' : 'secondary-classes'}
+    `}
+  >
+    Button text
+  </button>
+  ```
+
+## Key Components
+
+1. **LiveBetFeed**: Virtualized list of real-time predictions
+2. **BetCard**: Animated card showing prediction details
+3. **CategoriesPanel**: Collapsible filter sidebar
+4. **WalletPanel**: Wallet connection and management
+5. **BetCreationModal**: 4-step wizard for creating predictions
+6. **MemeEngine**: Meme generation UI for bet winners
+7. **BottomNav**: Mobile navigation bar
+
+## State Management
+
+- Use React state for local component state
+- Use Zustand for global state management
+- Use React Query for API data fetching and caching

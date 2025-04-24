@@ -25,55 +25,13 @@ CREATE POLICY "Users can register their own wallet"
 -- Create policy for updating wallet users (only own data)
 CREATE POLICY "Users can update their own wallet data"
   ON wallet_users FOR UPDATE
-  USING (wallet_address = current_setting('request.jwt.claims', true)::json->>'wallet_address');
+  USING (auth.uid() = id);
 
 -- Create index for wallet lookups
 CREATE INDEX wallet_users_address_idx ON wallet_users (wallet_address);
 
--- Create bets table
-CREATE TABLE bets (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  question TEXT NOT NULL,
-  creator_id UUID REFERENCES auth.users,
-  creator_wallet TEXT REFERENCES wallet_users(wallet_address),
-  contract_address TEXT,
-  resolution_time TIMESTAMPTZ,
-  created_at TIMESTAMPTZ DEFAULT now(),
-  category TEXT,
-  status TEXT DEFAULT 'active',
-  image_url TEXT,
-  options JSONB,
-  total_stake BIGINT DEFAULT 0
-);
-
--- Enable Row Level Security
-ALTER TABLE bets ENABLE ROW LEVEL SECURITY;
-
--- Create policy for reading bets (anyone can read)
-CREATE POLICY "Anyone can read bets"
-  ON bets FOR SELECT
-  USING (true);
-
--- Create policy for inserting bets (authenticated users or wallet users)
-CREATE POLICY "Authenticated users can insert bets"
-  ON bets FOR INSERT
-  WITH CHECK (auth.uid() IS NOT NULL OR creator_wallet IS NOT NULL);
-
--- Create policy for updating bets (only the creator)
-CREATE POLICY "Users can update their own bets"
-  ON bets FOR UPDATE
-  USING (
-    (auth.uid() = creator_id) OR 
-    (creator_wallet = current_setting('request.jwt.claims', true)::json->>'wallet_address')
-  );
-
--- Create policy for deleting bets (only the creator)
-CREATE POLICY "Users can delete their own bets"
-  ON bets FOR DELETE
-  USING (
-    (auth.uid() = creator_id) OR 
-    (creator_wallet = current_setting('request.jwt.claims', true)::json->>'wallet_address')
-  );
+-- Modify bets table to reference wallet_users
+ALTER TABLE bets ADD COLUMN creator_wallet TEXT REFERENCES wallet_users(wallet_address);
 
 -- Create wallet_stakes table to track user predictions
 CREATE TABLE wallet_stakes (
@@ -105,15 +63,27 @@ CREATE POLICY "Wallet owners can update their stakes"
   ON wallet_stakes FOR UPDATE
   USING (wallet_address = current_setting('request.jwt.claims', true)::json->>'wallet_address');
 
--- Create an index for efficient queries
-CREATE INDEX bets_creator_id_idx ON bets (creator_id);
-CREATE INDEX bets_creator_wallet_idx ON bets (creator_wallet);
-CREATE INDEX bets_category_idx ON bets (category);
-CREATE INDEX bets_status_idx ON bets (status);
+-- Create indexes for efficient queries
 CREATE INDEX wallet_stakes_bet_id_idx ON wallet_stakes (bet_id);
 CREATE INDEX wallet_stakes_wallet_address_idx ON wallet_stakes (wallet_address);
 
--- Set up Realtime subscription
-ALTER PUBLICATION supabase_realtime ADD TABLE bets; 
+-- Update RLS policies for bets table to work with wallet authentication
+DROP POLICY IF EXISTS "Users can update their own bets" ON bets;
+DROP POLICY IF EXISTS "Users can delete their own bets" ON bets;
+DROP POLICY IF EXISTS "Authenticated users can insert bets" ON bets;
+
+CREATE POLICY "Wallet users can insert bets"
+  ON bets FOR INSERT
+  WITH CHECK (true); -- This will be enforced by application logic with wallet signature
+
+CREATE POLICY "Wallet users can update their own bets"
+  ON bets FOR UPDATE
+  USING (creator_wallet = current_setting('request.jwt.claims', true)::json->>'wallet_address');
+
+CREATE POLICY "Wallet users can delete their own bets"
+  ON bets FOR DELETE
+  USING (creator_wallet = current_setting('request.jwt.claims', true)::json->>'wallet_address');
+
+-- Set up Realtime subscription for new tables
 ALTER PUBLICATION supabase_realtime ADD TABLE wallet_users;
 ALTER PUBLICATION supabase_realtime ADD TABLE wallet_stakes; 

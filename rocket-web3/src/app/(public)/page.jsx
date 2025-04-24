@@ -2,74 +2,183 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { Wallet, X } from "lucide-react";
+import { useAccount, useConnect, useDisconnect } from "wagmi";
+import walletAuth from "@/lib/supabaseWalletAuth";
+import { useAppStore } from "@/lib/store";
+import { useRouter } from "next/navigation";
 
 // Create a simple modal component for the sign-in options
 function AuthModal({ isOpen, onClose }) {
+  const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
+  const { address, isConnected } = useAccount();
+  const { disconnect } = useDisconnect();
+  const { connectAsync, connectors } = useConnect({
+    onError: (err) => {
+      console.error("Wallet connection error:", err);
+      setError(err.message || "Failed to connect wallet");
+      setIsLoading(false);
+    },
+    onSuccess: async (result) => {
+      try {
+        if (result.account) {
+          console.log("Registering wallet from modal:", result.account);
+
+          // Call our Supabase wallet auth
+          const { user, error: authError } = await walletAuth.signInWithWallet({
+            walletAddress: result.account,
+            signature: "", // We're not requiring signatures for this simplified version
+            username: `User_${result.account.substring(0, 6)}`,
+          });
+
+          if (authError) {
+            setError("Failed to register wallet. Please try again.");
+            disconnect();
+            return;
+          }
+
+          console.log("Wallet registered successfully:", user);
+          // Redirect to browse page after success
+          router.push("/browse");
+        }
+      } catch (err) {
+        console.error("Error in onSuccess handler:", err);
+        setError("An error occurred during wallet connection");
+        disconnect();
+      } finally {
+        setIsLoading(false);
+        onClose();
+      }
+    },
+  });
+
   if (!isOpen) return null;
+
+  const handleConnectMetaMask = async () => {
+    try {
+      setError(null);
+      setIsLoading(true);
+      const metamaskConnector = connectors.find((c) => c.id === "metaMask");
+      if (!metamaskConnector) {
+        setError("MetaMask connector not found");
+        setIsLoading(false);
+        return;
+      }
+      await connectAsync({ connector: metamaskConnector });
+    } catch (err) {
+      console.error("MetaMask connection error:", err);
+      setIsLoading(false);
+      // Error is handled by onError callback
+    }
+  };
+
+  const handleConnectCoinbase = async () => {
+    try {
+      setError(null);
+      setIsLoading(true);
+      const coinbaseConnector = connectors.find(
+        (c) => c.id === "coinbaseWallet"
+      );
+      if (!coinbaseConnector) {
+        setError("Coinbase Wallet connector not found");
+        setIsLoading(false);
+        return;
+      }
+      await connectAsync({ connector: coinbaseConnector });
+    } catch (err) {
+      console.error("Coinbase Wallet connection error:", err);
+      setIsLoading(false);
+      // Error is handled by onError callback
+    }
+  };
+
+  const handleConnectWalletConnect = async () => {
+    try {
+      setError(null);
+      setIsLoading(true);
+      const walletConnectConnector = connectors.find(
+        (c) => c.id === "walletConnect"
+      );
+      if (!walletConnectConnector) {
+        setError("WalletConnect connector not found");
+        setIsLoading(false);
+        return;
+      }
+      await connectAsync({ connector: walletConnectConnector });
+    } catch (err) {
+      console.error("WalletConnect connection error:", err);
+      setIsLoading(false);
+      // Error is handled by onError callback
+    }
+  };
+
+  const handleAnonymous = () => {
+    // For now, just redirect to browse
+    router.push("/browse");
+    onClose();
+  };
 
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50">
       <div className="absolute inset-0 bg-black/70" onClick={onClose}></div>
       <div className="relative bg-dark border-2 border-primary/50 rounded-lg p-8 max-w-md w-full mx-4 animate-fadeIn">
         <h2 className="text-2xl font-heading text-center text-primary mb-6">
-          Sign In / Connect
+          Connect Wallet
         </h2>
+
+        {error && (
+          <div className="mb-4 p-3 bg-red-500/20 border border-red-500 rounded-lg text-sm text-red-400">
+            {error}
+          </div>
+        )}
 
         <div className="space-y-4">
           <button
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg flex items-center justify-center"
-            onClick={() => console.log("Google OAuth login")}
+            className="w-full bg-orange-600 hover:bg-orange-700 text-white py-3 px-4 rounded-lg flex items-center justify-center"
+            onClick={handleConnectMetaMask}
+            disabled={isLoading}
           >
             <span className="mr-2">
               <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                <path
-                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                  fill="#4285F4"
-                />
-                <path
-                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                  fill="#34A853"
-                />
-                <path
-                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                  fill="#FBBC05"
-                />
-                <path
-                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                  fill="#EA4335"
-                />
+                <path d="M19 3H5C3.9 3 3 3.9 3 5V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V5C21 3.9 20.1 3 19 3ZM19 19H5V5H19V19ZM7.5 13C7.5 14.38 8.62 15.5 10 15.5C11.38 15.5 12.5 14.38 12.5 13H15C15 14.38 16.12 15.5 17.5 15.5C18.88 15.5 20 14.38 20 13H11H7.5Z" />
               </svg>
             </span>
-            Continue with Google
+            {isLoading ? "Connecting..." : "MetaMask"}
           </button>
 
           <button
-            className="w-full bg-yellow-500 hover:bg-yellow-600 text-white py-3 px-4 rounded-lg flex items-center justify-center"
-            onClick={() => console.log("Email login")}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg flex items-center justify-center"
+            onClick={handleConnectCoinbase}
+            disabled={isLoading}
           >
             <span className="mr-2">
               <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10h5v-2h-5c-4.34 0-8-3.66-8-8s3.66-8 8-8 8 3.66 8 8v1.43c0 .79-.71 1.57-1.5 1.57s-1.5-.78-1.5-1.57V12c0-2.76-2.24-5-5-5s-5 2.24-5 5 2.24 5 5 5c1.38 0 2.64-.56 3.54-1.47.65.89 1.77 1.47 2.96 1.47 1.97 0 3.5-1.6 3.5-3.57V12c0-5.52-4.48-10-10-10zm0 13c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z" />
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" />
+                <path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zm0 8c-1.65 0-3-1.35-3-3s1.35-3 3-3 3 1.35 3 3-1.35 3-3 3z" />
               </svg>
             </span>
-            Continue with Email
+            {isLoading ? "Connecting..." : "Coinbase Wallet"}
           </button>
 
           <button
             className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 px-4 rounded-lg flex items-center justify-center"
-            onClick={() => console.log("Wallet connect")}
+            onClick={handleConnectWalletConnect}
+            disabled={isLoading}
           >
             <span className="mr-2">
               <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M19 3H5C3.9 3 3 3.9 3 5V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V5C21 3.9 20.1 3 19 3ZM19 19H5V5H19V19ZM12 6C10.9 6 10 6.9 10 8C10 9.1 10.9 10 12 10C13.1 10 14 9.1 14 8C14 6.9 13.1 6 12 6ZM16 16H8V15C8 13.9 9.79 13 12 13C14.21 13 16 13.9 16 15V16Z" />
               </svg>
             </span>
-            Connect Wallet
+            {isLoading ? "Connecting..." : "WalletConnect"}
           </button>
 
           <button
             className="w-full bg-gray-700 hover:bg-gray-600 text-white py-3 px-4 rounded-lg flex items-center justify-center"
-            onClick={() => console.log("Anonymous login")}
+            onClick={handleAnonymous}
+            disabled={isLoading}
           >
             <span className="mr-2">
               <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
@@ -84,7 +193,16 @@ function AuthModal({ isOpen, onClose }) {
           className="absolute top-2 right-2 text-gray-400 hover:text-white"
           onClick={onClose}
         >
-          ✕
+          <X size={20} />
+        </button>
+
+        {/* Exit button */}
+        <button
+          className="w-full mt-6 text-center text-white/60 hover:text-white py-2"
+          onClick={onClose}
+          disabled={isLoading}
+        >
+          Cancel
         </button>
       </div>
     </div>
@@ -93,6 +211,18 @@ function AuthModal({ isOpen, onClose }) {
 
 export default function HomePage() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const { isConnected } = useAccount();
+  const router = useRouter();
+
+  const handleConnectClick = () => {
+    if (isConnected) {
+      // If already connected, go directly to browse
+      router.push("/browse");
+    } else {
+      // Otherwise show the auth modal
+      setIsAuthModalOpen(true);
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-dark bg-[url('/stars-bg.svg')] bg-repeat">
@@ -111,9 +241,9 @@ export default function HomePage() {
           The next-gen prediction market on PulseChain
         </p>
 
-        {/* Sign In button that opens auth modal */}
+        {/* Connect Wallet button that opens auth modal */}
         <button
-          onClick={() => setIsAuthModalOpen(true)}
+          onClick={handleConnectClick}
           className="bg-primary hover:bg-primary/90 text-white 
                     px-12 py-4 rounded-full text-lg font-medium
                     transition-all transform hover:scale-105 hover:-rotate-1
@@ -121,12 +251,13 @@ export default function HomePage() {
                     hover:shadow-[0_8px_30px_rgba(255,45,117,0.6)]
                     animate-bounce-subtle"
         >
-          Sign In
+          {isConnected ? "Enter App" : "Connect Wallet"}
         </button>
 
         {/* Subtle CTA text */}
         <p className="mt-6 text-gray-400 text-sm">
-          Browse predictions without an account or sign in to participate
+          Browse predictions without connecting or connect your wallet to
+          participate
         </p>
       </div>
 

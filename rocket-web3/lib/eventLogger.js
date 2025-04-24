@@ -39,14 +39,16 @@ export async function logContractEvent(eventName, eventData) {
       .single();
 
     if (error) {
-      console.error("Error logging contract event:", error);
-      throw error;
+      throw new Error(`Failed to log contract event: ${error.message}`);
     }
 
     return data;
   } catch (error) {
     console.error("Error logging contract event:", error);
-    throw error;
+    // Throw a properly formatted error
+    throw new Error(
+      `Failed to log contract event: ${error.message || "Unknown error"}`
+    );
   }
 }
 
@@ -97,73 +99,66 @@ export async function syncPredictionToSupabase(predictionId, eventData = {}) {
  */
 export function setupContractEventListeners(provider, contractAddress) {
   if (!provider || !contractAddress) {
-    console.error("Provider or contract address not provided");
-    return { unsubscribe: () => {} };
+    throw new Error(
+      "Provider and contract address are required for event listeners"
+    );
   }
 
   const contract = getPredictionMarketContract(provider, contractAddress);
-
-  // Keep track of listeners to remove them later
   const listeners = [];
 
-  // Listen for PredictionCreated events
-  const predictionCreatedListener = (
-    predictionId,
-    question,
-    creator,
-    resolutionTime,
-    event
-  ) => {
-    const eventData = {
-      predictionId: predictionId.toString(),
-      question,
-      creator,
-      resolutionTime: resolutionTime.toString(),
-      blockNumber: event.blockNumber,
-      transactionHash: event.transactionHash,
+  // Wrap event handlers in try-catch blocks
+  const safeEventHandler = (handler) => {
+    return async (...args) => {
+      try {
+        await handler(...args);
+      } catch (error) {
+        console.error("Error handling contract event:", error);
+        // Let the error propagate so it can be caught by the error boundary
+        throw new Error(
+          `Contract event handler failed: ${error.message || "Unknown error"}`
+        );
+      }
     };
-
-    logContractEvent("PredictionCreated", eventData);
-    syncPredictionToSupabase(predictionId.toString(), {
-      question,
-      creator,
-      resolution_time: new Date(resolutionTime * 1000).toISOString(),
-      status: "active",
-      transaction_hash: event.transactionHash,
-    });
   };
 
-  // Listen for StakePlaced events
-  const stakeListener = (predictionId, optionIndex, user, amount, event) => {
-    const eventData = {
-      predictionId: predictionId.toString(),
-      optionIndex: optionIndex.toString(),
-      user,
-      amount: amount.toString(),
-      blockNumber: event.blockNumber,
-      transactionHash: event.transactionHash,
-    };
+  // Event handlers
+  const predictionCreatedHandler = safeEventHandler(
+    async (predictionId, question, creator, resolutionTime, event) => {
+      await logContractEvent("PredictionCreated", {
+        predictionId: predictionId.toString(),
+        question,
+        creator,
+        resolutionTime: resolutionTime.toString(),
+        blockNumber: event.blockNumber,
+        transactionHash: event.transactionHash,
+      });
+    }
+  );
 
-    logContractEvent("StakePlaced", eventData);
-  };
+  const stakeHandler = safeEventHandler(
+    async (predictionId, optionIndex, user, amount, event) => {
+      await logContractEvent("StakePlaced", {
+        predictionId: predictionId.toString(),
+        optionIndex: optionIndex.toString(),
+        user,
+        amount: amount.toString(),
+        blockNumber: event.blockNumber,
+        transactionHash: event.transactionHash,
+      });
+    }
+  );
 
-  // Listen for PredictionResolved events
-  const resolutionListener = (predictionId, winningOptionIndex, event) => {
-    const eventData = {
-      predictionId: predictionId.toString(),
-      winningOptionIndex: winningOptionIndex.toString(),
-      blockNumber: event.blockNumber,
-      transactionHash: event.transactionHash,
-    };
-
-    logContractEvent("PredictionResolved", eventData);
-    syncPredictionToSupabase(predictionId.toString(), {
-      winning_option_index: winningOptionIndex.toString(),
-      status: "resolved",
-      resolved_at: new Date().toISOString(),
-      transaction_hash: event.transactionHash,
-    });
-  };
+  const resolutionHandler = safeEventHandler(
+    async (predictionId, winningOptionIndex, event) => {
+      await logContractEvent("PredictionResolved", {
+        predictionId: predictionId.toString(),
+        winningOptionIndex: winningOptionIndex.toString(),
+        blockNumber: event.blockNumber,
+        transactionHash: event.transactionHash,
+      });
+    }
+  );
 
   // Listen for RewardClaimed events
   const rewardListener = (predictionId, user, amount, event) => {
@@ -178,28 +173,40 @@ export function setupContractEventListeners(provider, contractAddress) {
     logContractEvent("RewardClaimed", eventData);
   };
 
-  // Add listeners to contract
-  contract.on("PredictionCreated", predictionCreatedListener);
-  listeners.push(["PredictionCreated", predictionCreatedListener]);
+  // Set up event listeners with error handling
+  try {
+    contract.on("PredictionCreated", predictionCreatedHandler);
+    listeners.push(["PredictionCreated", predictionCreatedHandler]);
 
-  contract.on("StakePlaced", stakeListener);
-  listeners.push(["StakePlaced", stakeListener]);
+    contract.on("StakePlaced", stakeHandler);
+    listeners.push(["StakePlaced", stakeHandler]);
 
-  contract.on("PredictionResolved", resolutionListener);
-  listeners.push(["PredictionResolved", resolutionListener]);
+    contract.on("PredictionResolved", resolutionHandler);
+    listeners.push(["PredictionResolved", resolutionHandler]);
 
-  contract.on("RewardClaimed", rewardListener);
-  listeners.push(["RewardClaimed", rewardListener]);
+    contract.on("RewardClaimed", rewardListener);
+    listeners.push(["RewardClaimed", rewardListener]);
 
-  // Return unsubscribe function
-  return {
-    unsubscribe: () => {
-      listeners.forEach(([event, listener]) => {
-        contract.off(event, listener);
-      });
-      console.log("Unsubscribed from contract events");
-    },
-  };
+    return {
+      unsubscribe: () => {
+        listeners.forEach(([event, listener]) => {
+          try {
+            contract.off(event, listener);
+          } catch (error) {
+            console.warn(`Error removing listener for ${event}:`, error);
+          }
+        });
+        console.log("Successfully unsubscribed from contract events");
+      },
+    };
+  } catch (error) {
+    console.error("Error setting up contract event listeners:", error);
+    throw new Error(
+      `Failed to setup contract event listeners: ${
+        error.message || "Unknown error"
+      }`
+    );
+  }
 }
 
 export default {

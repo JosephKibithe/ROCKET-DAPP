@@ -1,6 +1,6 @@
 import { createConfig, http } from "wagmi";
 import { mainnet, sepolia } from "wagmi/chains";
-import { injected } from "wagmi/connectors";
+import { injected, walletConnect } from "wagmi/connectors";
 
 // Configure supported chains
 export const chains = [sepolia, mainnet];
@@ -8,7 +8,13 @@ export const chains = [sepolia, mainnet];
 // Create wagmi config
 export const config = createConfig({
   chains,
-  connectors: [injected()],
+  connectors: [
+    injected(),
+    walletConnect({
+      projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID,
+      showQrModal: true,
+    }),
+  ],
   transports: {
     [sepolia.id]: http(),
     [mainnet.id]: http(),
